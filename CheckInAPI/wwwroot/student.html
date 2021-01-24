@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>极简签到</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<!--标准mui.css-->
+		<link rel="stylesheet" href="css/mui.min.css">
+		<!--App自定义的css-->
+		<!--<link rel="stylesheet" type="text/css" href="../css/app.css"/>-->
+
+	</head>
+	<body onload="pageLoaded();">
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title ">金仁-极简签到</h1>
+
+		</header>
+		<div class="mui-content">
+			<div class="mui-card">
+				<ul class="mui-table-view">
+					<li class="mui-table-view-cell mui-collapse mui-active">
+						<a class="mui-navigate-right" href="#">个人信息</a>
+						<div class="mui-collapse-content">
+							<h4>姓名&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="mui-icon mui-icon-person"></span><label id="tname"></label></h4>
+							<h4>电话号码<span class="mui-icon mui-icon-phone"></span><label id="tphone"></label></h4>
+							<h4>说明&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="mui-icon mui-icon-chatbubble"></span><label id="tdescription"></label></h4>
+							<h4 class="mui-plus-visible">UID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="mui-icon mui-icon-gear"></span><label
+								 id="UID"></label></h4>
+						</div>
+						<div class="mui-card-content">
+							<div class="mui-card-content-inner">
+								如果信息不完整，请点击下方“完善和修改个人信息”，将个人信息填写完整。
+							</div>
+						</div>
+					</li>
+					<li class="mui-table-view-cell mui-collapse ">
+						<a class="mui-navigate-right" href="#">完善和修改个人信息</a>
+						<div class="mui-collapse-content">
+							<div class="mui-card-content">
+								<div class="mui-card-content-inner">
+									请在下方填写你的个人信息
+								</div>
+							</div>
+							<form class="mui-input-group">
+								<div class="mui-input-row">
+									<label>姓名</label>
+									<input id="txtName" type="text" placeholder="请输入你的姓名">
+								</div>
+								<div class="mui-input-row">
+									<label>电话号码</label>
+									<input id="txtPhone" type="text" class="mui-input-clear" placeholder="电话号码">
+								</div>
+
+								<div class="mui-input-row ">
+									<!-- mui-plus-visible -->
+									<label>说明</label>
+									<input id="txtDescription" type="text" class="mui-input-speech mui-input-clear" placeholder="简要的介绍一下你自己">
+								</div>
+								<div class="mui-button-row">
+									<button class="mui-btn mui-btn-primary" type="button" onclick="saveUserInfo();">确认</button>&nbsp;&nbsp;
+
+								</div>
+							</form>
+						</div>
+					</li>
+				</ul>
+			</div>
+
+		</div>
+		<div class="mui-content">
+			<div class="mui-card">
+				<div class="mui-card-header">签到事务</div>
+				<div class="mui-card-content">
+					<div class="mui-card-content-inner">
+						<ul id="listCheck" class="mui-table-view mui-table-view-striped mui-table-view-condensed">
+
+						</ul>
+					</div>
+				</div>
+				<div class="mui-button-row">
+					<button class="mui-btn mui-btn-primary" type="button" onclick="CheckIn();">点击签到</button>
+				</div>
+				<div class="mui-card-footer"></div>
+			</div>
+
+		</div>
+		<div class="mui-card">
+			<div class="mui-card-header">历史签到信息列表&nbsp;&nbsp;<button class="mui-btn mui-btn-primary" type="button" onclick="getfile();">下载签到文件</button></div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<ul id="listrecord" class="mui-table-view mui-table-view-striped mui-table-view-condensed">
+
+					</ul>
+				</div>
+			</div>
+			<div class="mui-card-footer">
+
+			</div>
+		</div>
+		<script src="js/mui.min.js"></script>
+		<script src="tools.js"></script>
+		<script>
+			mui.init({
+				swipeBack: true, //启用右滑关闭功能
+
+			});
+			var usession = null;
+			var checkitemtemplet =
+				`<li class="mui-table-view-cell">
+							<div class="mui-table">
+								<div class="mui-table-cell mui-col-xs-10">
+									<h4 class="mui-ellipsis">地点<span class="mui-icon mui-icon-location"></span>:{ClassRoom}</h4>
+									<h5>管理人<span class="mui-icon mui-icon-personadd"></span>:{TeacherSession}</h5>
+									<p class="mui-h6 mui-ellipsis">说明<span class="mui-icon mui-icon-compose"></span>:{Description}</p>
+									<span class="mui-h5 mui-plus-visible">{Session}</span>
+								</div>
+							</div>
+						</li>`;
+			var recorditemtemplet =
+				`<li class="mui-table-view-cell">
+					<div class="mui-table">
+						<div class="mui-table-cell mui-col-xs-10">
+							<h4 class="mui-ellipsis">姓名:{name}</h4>
+							<h5>手机号码{phone}</h5>
+							<h5>签到时间{checkTime}</h5>
+							<span class="mui-h5 mui-plus-visible">{id}</span>
+						</div>
+					</div>
+				</li>`;
+
+			function pageLoaded() {
+				usession = getUserinfo();
+				getCheck();
+				getCheckRecords();
+			}
+
+			function CheckIn() {
+				var url = "api/CheckRecords/" + getQueryVariable("s") +
+					"?StudentSession=" +usession.session;
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'put',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							mui.alert('签到成功', '极简签到', null);
+							window.location = window.location;
+							return;					
+						}
+						//return data;
+				
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+			function getCheckRecords() {
+				var url = "api/CheckRecords/" + getQueryVariable("s") + "?StudentSession=2";
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							for (i = 0; i < data.length; i++) {
+								var item = recorditemtemplet;
+								item = item.replace("{id}", data[i].id);
+								item = item.replace("{studentSession}", data[i].studentSession);
+								item = item.replace("{checkInSession}", data[i].checkInSession);
+								item = item.replace("{checkTime}", data[i].checkTime);
+			
+								item = item.replace("{name}", data[i].name);
+								item = item.replace("{session}", data[i].session);
+								item = item.replace("{phone}", data[i].phone);
+								item = item.replace("{description}", data[i].description);
+								item = item.replace("{registTime}", data[i].registTime);
+								listrecord.innerHTML += item;
+							}
+							csvdata = data;
+						}
+						return data;
+			
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+
+			function getCheck() {
+				//var url = 'http://localhost:49806/api/Checks?TeacherSession=' + usession.session;
+				var url = 'api/Checks/' + getQueryVariable("s") +
+					'?ClassRoom=1&TeacherSession=2&Description=3';
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+
+							var item = checkitemtemplet;
+							item = item.replace("{ClassRoom}", data.classRoom);
+							item = item.replace("{Description}", data.description);
+							item = item.replace("{ID}", data.id);
+							item = item.replace("{TeacherSession}", usession.Name);
+							item = item.replace("{Session}", data.session);
+							listCheck.innerHTML += item;
+
+						}
+						return data;
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+
+			function getUserinfo() {
+				var user = {
+					session: '',
+					Name: '',
+					Phone: '',
+					Description: ''
+				};
+				user.session = getUserSession();
+				user.Name = window.localStorage.getItem("Name");
+				user.Phone = window.localStorage.getItem("Phone");
+				user.Description = window.localStorage.getItem("Description");
+
+				txtName.value = user.Name;
+				txtPhone.value = user.Phone;
+				txtDescription.value = user.Description;
+
+				UID.innerText = user.session;
+				tname.innerText = user.Name;
+				tphone.innerText = user.Phone;
+				tdescription.innerText = user.Description;
+				//var t = getTeacher(user.session, user.Name, user.Phone, user.Description);
+				return user;
+			}
+
+			function saveUserInfo() {
+				getTeacher(usession.session, txtName.value, txtPhone.value, txtDescription.value);
+			}
+
+			function getTeacher(Session, Name, Phone, Description) {
+				//var url="http://localhost:49806/api/Student/1?Name=2&Phone=3&Description=4";
+				var url = 'api/Student/' + Session +
+					'?Name=' + Name + '&Phone=' + Phone + '&Description=' + Description;
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							usession.Name = data.name;
+							usession.Phone = data.phone;
+							usession.Description = data.description;
+							window.localStorage.setItem("Name", usession.Name);
+							window.localStorage.setItem("Phone", usession.Phone);
+							window.localStorage.setItem("Description", usession.Description);
+							//getUserinfo();
+							mui.alert('信息保存成功', '极简签到', null);
+							window.location = window.location;
+						}
+						return data;
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

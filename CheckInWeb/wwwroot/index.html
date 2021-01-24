@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>极简签到系统</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<!--标准mui.css-->
+		<link rel="stylesheet" href="css/mui.min.css">
+		<!--App自定义的css-->
+		<!--<link rel="stylesheet" type="text/css" href="../css/app.css"/>-->
+
+	</head>
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">极简签到系统-管理</h1>
+
+		</header>
+		<div class="mui-content">
+			<div class="mui-card">
+				<ul class="mui-table-view">
+					<li class="mui-table-view-cell mui-collapse mui-active">
+						<a class="mui-navigate-right" href="#">管理者信息</a>
+						<div class="mui-collapse-content">
+							<h5>姓名&nbsp;&nbsp;&nbsp;&nbsp;<label id="tname"></label></h5>
+							<h5>电话号码&nbsp;&nbsp;<label id="tphone"></label></h5>
+							<h5>说明&nbsp;&nbsp;&nbsp;&nbsp;<label id="tdescription"></label></h5>
+							<h5>UID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label id="UID"></label></h5>
+						</div>
+					</li>
+					<li class="mui-table-view-cell mui-collapse ">
+						<a class="mui-navigate-right" href="#">完善管理员信息</a>
+						<div class="mui-collapse-content">
+							<form class="mui-input-group">
+								<div class="mui-input-row">
+									<label>姓名</label>
+									<input id="Name" type="text" placeholder="请输入你的姓名">
+								</div>
+								<div class="mui-input-row">
+									<label>电话号码</label>
+									<input id="Phone" type="text" class="mui-input-clear" placeholder="电话号码">
+								</div>
+
+								<div class="mui-input-row ">
+									<!-- mui-plus-visible -->
+									<label>说明</label>
+									<input id="Description" type="text" class="mui-input-speech mui-input-clear" placeholder="简要的介绍一下你自己">
+								</div>
+								<div class="mui-button-row">
+									<button class="mui-btn mui-btn-primary" type="button" onclick="return false;">确认</button>&nbsp;&nbsp;
+
+								</div>
+							</form>
+						</div>
+					</li>
+				</ul>
+			</div>
+			<div class="mui-card">
+				<ul class="mui-table-view">
+					<li class="mui-table-view-cell mui-collapse ">
+						<a class="mui-navigate-right" href="#">新建签到事项</a>
+						<div class="mui-collapse-content">
+							<form class="mui-input-group">
+								<div class="mui-input-row">
+									<label>场地名称</label>
+									<input id="Name" type="text" placeholder="请输入场地名称,比如教室编号">
+								</div>
+								<div class="mui-input-row">
+									<label>说明</label>
+									<input id="Description" type="text" class="mui-input-speech mui-input-clear" placeholder="说明一下签到的注意事项">
+								</div>
+								<div class="mui-button-row">
+									<button class="mui-btn mui-btn-primary" type="button" onclick="return false;">新增签到</button>&nbsp;&nbsp;
+
+								</div>
+							</form>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<script src="js/mui.min.js"></script>
+		<script src="tools.js"></script>
+		<script>
+			mui.init({
+				swipeBack: true ,//启用右滑关闭功能
+				
+			});
+			//var usession = getUserSession();
+			var usession = getUserinfo();
+			UID.innerText = usession.session;
+			tname.innerText = usession.Name;
+			tphone.innerText = usession.Phone;
+			tdescription.innerText = usession.Description;
+			
+			function getUserinfo(){
+				var user = {session:'',Name:'',Phone:'',Description:''};
+				user.session = getUserSession();
+				user.Name = window.localStorage.getItem("Name");
+				user.Phone = window.localStorage.getItem("Phone");
+				user.Description = window.localStorage.getItem("Description");
+				
+				var t = getTeacher(user.session,user.Name,user.Phone,user.Description);
+				return user;
+			}
+			
+			function getTeacher( Session, Name, Phone, Description){
+				mui.ajax('http://localhost:49806/api/Teachers/'+Session
+				+'?Name='+Name+'&Phone='+Phone+'&Description='+Description, {//省略号处为后端url
+				    dataType: 'json', //服务器返回json格式数据（也有其他格式）
+				    type: 'get', //HTTP请求类型（也有其他类型，如“get”）
+				    timeout: 10000, //超时时间设置为10秒；
+				    headers: {
+				        'Content-Type': 'application/json;charset:utf-8'
+				    },
+				    success: function(data) {
+				    //服务器返回响应，根据响应结果，分析操作是否成功
+				        if (data.status == 200) {
+				            //显示成功信息
+				            //编写成功连接后的操作
+							return data;
+					   	}
+					   	else{
+				    		app.showToast(data.msg, "error");
+							alert("网络访问出现错误:\r\n"+data.msg);
+				    	}
+				    },
+				    error: function(xhr, type, errorThrown) {
+				        //异常处理；
+				        console.log(type);
+				    }
+				});
+			}
+			
+		</script>
+	</body>
+
+</html>

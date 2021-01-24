@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>极简签到</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<!--标准mui.css-->
+		<link rel="stylesheet" href="css/mui.min.css">
+		<!--App自定义的css-->
+		<!--<link rel="stylesheet" type="text/css" href="../css/app.css"/>-->
+
+	</head>
+	<body onload="pageLoaded();">
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title ">金仁-极简签到</h1>
+
+		</header>
+		<div class="mui-content">
+			<div class="mui-card">
+				<div class="mui-card-header">签到事务</div>
+				<div class="mui-card-content">
+					<div class="mui-card-content-inner">
+						<ul id="listCheck" class="mui-table-view mui-table-view-striped mui-table-view-condensed">
+
+						</ul>
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+		<div class="mui-card align-items-center">
+			<div id="qrcode" class="mui-card-header mui-card-media "></div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p><label id="labUrl"></label></p>
+					<p style="color: #333;">手机截图,通过微信分享截图到微信群或者微信好友
+					</p>
+				</div>
+			</div>
+			<div class="mui-card-footer footer-center">
+				收到图片后长按图片扫描二维码即可进入签到页面
+			</div>
+		</div>
+		<div class="mui-card">
+			<div class="mui-card-header">签到信息列表&nbsp;&nbsp;<button class="mui-btn mui-btn-primary" type="button" onclick="getfile();">下载签到文件</button></div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<ul id="listrecord" class="mui-table-view mui-table-view-striped mui-table-view-condensed">
+
+					</ul>
+				</div>
+			</div>
+			<div class="mui-card-footer">
+
+			</div>
+		</div>
+		<script src="js/mui.min.js"></script>
+		<script src="tools.js"></script>
+		<script src="js/qrcode.min.js"></script>
+		<script>
+			mui.init({
+				swipeBack: true, //启用右滑关闭功能
+
+			});
+
+			var usession = null;
+			var checkitemtemplet =
+				`<li class="mui-table-view-cell">
+							<div class="mui-table">
+								<div class="mui-table-cell mui-col-xs-10">
+									<h4 class="mui-ellipsis">地点<span class="mui-icon mui-icon-location"></span>:{ClassRoom}</h4>
+									<h5>管理人<span class="mui-icon mui-icon-personadd"></span>:{TeacherSession}</h5>
+									<p class="mui-h6 mui-ellipsis">说明<span class="mui-icon mui-icon-compose"></span>:{Description}</p>
+									<span class="mui-h5 mui-plus-visible">{Session}</span>
+								</div>
+							</div>
+						</li>`;
+			var recorditemtemplet =
+				`<li class="mui-table-view-cell">
+					<div class="mui-table">
+						<div class="mui-table-cell mui-col-xs-10">
+							<h4 class="mui-ellipsis">姓名:{name}</h4>
+							<h5>手机号码{phone}</h5>
+							<h5>签到时间{checkTime}</h5>
+							<span class="mui-h5 mui-plus-visible">{id}</span>
+						</div>
+					</div>
+				</li>`;
+
+			function pageLoaded() {
+				usession = getUser();
+				getCheck();
+				qrurl = getUrlPath() + "/student.html?id=" + getQueryVariable("s");
+				new QRCode(document.getElementById("qrcode"), qrurl);
+				labUrl.innerText = qrurl;
+				getCheckRecords();
+			}
+			var csvdata = null;
+
+			function getfile() {
+				var csvcontent="姓名,手机号码,签到时间\r\n";
+				for (i = 0; i < csvdata.length; i++) {
+					csvcontent+=csvdata[i].name+"," + csvdata[i].phone+","+csvdata[i].checkTime+"\r\n";
+				}
+				funDownload(csvcontent, "checkrecords.csv");
+			}
+
+			function getCheckRecords() {
+				var url = "api/CheckRecords/" + getQueryVariable("s") + "?StudentSession=2";
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							for (i = 0; i < data.length; i++) {
+								var item = recorditemtemplet;
+								item = item.replace("{id}", data[i].id);
+								item = item.replace("{studentSession}", data[i].studentSession);
+								item = item.replace("{checkInSession}", data[i].checkInSession);
+								item = item.replace("{checkTime}", data[i].checkTime);
+
+								item = item.replace("{name}", data[i].name);
+								item = item.replace("{session}", data[i].session);
+								item = item.replace("{phone}", data[i].phone);
+								item = item.replace("{description}", data[i].description);
+								item = item.replace("{registTime}", data[i].registTime);
+								listrecord.innerHTML += item;
+							}
+							csvdata = data;
+						}
+						return data;
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+
+			function getCheck() {
+				//var url = 'http://localhost:49806/api/Checks?TeacherSession=' + usession.session;
+				var url = 'api/Checks/' + getQueryVariable("s") +
+					'?ClassRoom=1&TeacherSession=2&Description=3';
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+
+							var item = checkitemtemplet;
+							item = item.replace("{ClassRoom}", data.classRoom);
+							item = item.replace("{Description}", data.description);
+							item = item.replace("{ID}", data.id);
+							item = item.replace("{TeacherSession}", usession.Name);
+							item = item.replace("{Session}", data.session);
+							listCheck.innerHTML += item;
+
+						}
+						return data;
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>
