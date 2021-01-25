@@ -52,8 +52,8 @@ namespace CheckInAPI.Controllers
             CheckInSession = CheckInSession.Replace("'", "");
             StudentSession = StudentSession.Replace("'", "");
             DataSet ds = MysqlHelper.Query(_ConnectionStr
-                , "SELECT * FROM checkinrecords a INNER JOIN students b ON a.StudentSession = b.`Session` where CheckInSession = '" + CheckInSession 
-                + "' or StudentSession = '"+ StudentSession + "';");
+                , "SELECT * FROM checkinrecords a left JOIN students b ON a.StudentSession = b.`Session` where CheckInSession = '" + CheckInSession 
+                + "';");
             Records[] ts = new Records[ds.Tables[0].Rows.Count];
             int idx = 0;
             foreach (DataRow dr in ds.Tables[0].Rows)
@@ -63,11 +63,11 @@ namespace CheckInAPI.Controllers
                 ts[idx].StudentSession = (string)dr["StudentSession"];
                 ts[idx].CheckInSession = (string)dr["CheckInSession"];
                 ts[idx].CheckTime = ((DateTime)dr["CheckTime"]).ToString("G");
-                ts[idx].Name = (string)dr["Name"];
-                ts[idx].Session = (string)dr["Session"];
-                ts[idx].Phone = (string)dr["Phone"];
-                ts[idx].Description = (string)dr["Description"].ToString();
-                ts[idx].RegistTime = ((DateTime)dr["RegistTime"]).ToString("G");
+                if(dr["Name"]!=null) ts[idx].Name = (string)dr["Name"];
+                if (dr["Session"] != null) ts[idx].Session = (string)dr["Session"];
+                if (dr["Phone"] != null) ts[idx].Phone = (string)dr["Phone"];
+                if (dr["Description"] != null) ts[idx].Description = (string)dr["Description"].ToString();
+                if (dr["RegistTime"] != null) ts[idx].RegistTime = ((DateTime)dr["RegistTime"]).ToString("G");
                 idx++;
 
             }

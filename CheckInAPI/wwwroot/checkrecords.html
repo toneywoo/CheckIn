@@ -57,7 +57,7 @@
 				</div>
 			</div>
 			<div class="mui-card-footer">
-
+				刷新页面后可以看到最新的签到记录
 			</div>
 		</div>
 		<script src="js/mui.min.js"></script>
@@ -93,10 +93,17 @@
 					</div>
 				</li>`;
 
+			var cid = null;
+
 			function pageLoaded() {
+				cid = getQueryVariable("s");
+				if (!cid) {
+					alert("无效的签到任务编码");
+
+				}
 				usession = getUser();
 				getCheck();
-				qrurl = getUrlPath() + "/student.html?id=" + getQueryVariable("s");
+				qrurl = getUrlPath() + "/student.html?id=" + cid;
 				new QRCode(document.getElementById("qrcode"), qrurl);
 				labUrl.innerText = qrurl;
 				getCheckRecords();
@@ -104,15 +111,15 @@
 			var csvdata = null;
 
 			function getfile() {
-				var csvcontent="姓名,手机号码,签到时间\r\n";
+				var csvcontent = "姓名,手机号码,签到时间\r\n";
 				for (i = 0; i < csvdata.length; i++) {
-					csvcontent+=csvdata[i].name+"," + csvdata[i].phone+","+csvdata[i].checkTime+"\r\n";
+					csvcontent += csvdata[i].name + "," + csvdata[i].phone + "," + csvdata[i].checkTime + "\r\n";
 				}
 				funDownload(csvcontent, "checkrecords.csv");
 			}
 
 			function getCheckRecords() {
-				var url = "api/CheckRecords/" + getQueryVariable("s") + "?StudentSession=2";
+				var url = "api/CheckRecords/" + cid + "?StudentSession=2";
 				mui.ajax(url, {
 					dataType: 'json',
 					type: 'get',
@@ -149,7 +156,7 @@
 
 			function getCheck() {
 				//var url = 'http://localhost:49806/api/Checks?TeacherSession=' + usession.session;
-				var url = 'api/Checks/' + getQueryVariable("s") +
+				var url = 'api/Checks/' + cid +
 					'?ClassRoom=1&TeacherSession=2&Description=3';
 				mui.ajax(url, {
 					dataType: 'json',

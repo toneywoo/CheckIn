@@ -64,13 +64,15 @@ namespace CheckInAPI.Controllers
             TeacherSession = TeacherSession.Replace("'", "");
             Description = Description.Replace("'", "");
             Checks s = new Checks();
-            string sql = "select * from checkins where session = '" + Session + "'";
+            string sql = "SELECT a.*,b.Name from checkins a INNER JOIN teachers b ON a.TeacherSession = b.`Session` where a.session = '" + Session + "'";
             DataSet ds = MysqlHelper.Query(_ConnectionStr, sql);
             if (ds.Tables[0].Rows.Count <= 0)
             {
                 sql = "insert into checkins (Session,ClassRoom,TeacherSession,Description) values "
                     + "('" + Session + "','" + ClassRoom + "','" + TeacherSession + "','" + Description + "')";
                 MysqlHelper.Exec(_ConnectionStr, sql);
+                sql = "SELECT a.*,b.Name from checkins a INNER JOIN teachers b ON a.TeacherSession = b.`Session` where a.session = '" + Session + "'";
+                ds = MysqlHelper.Query(_ConnectionStr, sql);
             }
             //if (s.ClassRoom != ClassRoom || s.TeacherSession != TeacherSession || s.Description != Description)
             //{
@@ -84,6 +86,7 @@ namespace CheckInAPI.Controllers
             s.ClassRoom = (string)ds.Tables[0].Rows[0]["ClassRoom"];
             s.TeacherSession = (string)ds.Tables[0].Rows[0]["TeacherSession"];
             s.Description = (string)ds.Tables[0].Rows[0]["Description"];
+            s.Name = (string)ds.Tables[0].Rows[0]["Name"];
             return s;
         }
 

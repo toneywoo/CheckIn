@@ -82,26 +82,14 @@
 						</ul>
 					</div>
 				</div>
-				<div class="mui-button-row">
+				<div id="divCheckBtn" class="mui-button-row">
 					<button class="mui-btn mui-btn-primary" type="button" onclick="CheckIn();">点击签到</button>
 				</div>
 				<div class="mui-card-footer"></div>
 			</div>
 
 		</div>
-		<div class="mui-card">
-			<div class="mui-card-header">历史签到信息列表&nbsp;&nbsp;<button class="mui-btn mui-btn-primary" type="button" onclick="getfile();">下载签到文件</button></div>
-			<div class="mui-card-content">
-				<div class="mui-card-content-inner">
-					<ul id="listrecord" class="mui-table-view mui-table-view-striped mui-table-view-condensed">
-
-					</ul>
-				</div>
-			</div>
-			<div class="mui-card-footer">
-
-			</div>
-		</div>
+		<div id="divdebug"></div>
 		<script src="js/mui.min.js"></script>
 		<script src="tools.js"></script>
 		<script>
@@ -121,27 +109,19 @@
 								</div>
 							</div>
 						</li>`;
-			var recorditemtemplet =
-				`<li class="mui-table-view-cell">
-					<div class="mui-table">
-						<div class="mui-table-cell mui-col-xs-10">
-							<h4 class="mui-ellipsis">姓名:{name}</h4>
-							<h5>手机号码{phone}</h5>
-							<h5>签到时间{checkTime}</h5>
-							<span class="mui-h5 mui-plus-visible">{id}</span>
-						</div>
-					</div>
-				</li>`;
+			var cid = "";
 
 			function pageLoaded() {
+				cid = getQueryVariable("id");
 				usession = getUserinfo();
+				autoSave(usession.session, txtName.value, txtPhone.value, txtDescription.value);
 				getCheck();
 				getCheckRecords();
 			}
 
 			function CheckIn() {
-				var url = "api/CheckRecords/" + getQueryVariable("s") +
-					"?StudentSession=" +usession.session;
+				var url = "api/CheckRecords/" + cid + "?StudentSession=" + usession.session;
+				//alert(url);
 				mui.ajax(url, {
 					dataType: 'json',
 					type: 'put',
@@ -151,20 +131,22 @@
 					},
 					success: function(data) {
 						if (data) {
-							mui.alert('签到成功', '极简签到', null);
+							//mui.alert('签到成功', '极简签到', null);
+							alert("签到成功", "极简签到");
 							window.location = window.location;
-							return;					
+							return;
 						}
 						//return data;
-				
+
 					},
 					error: function(xhr, type, errorThrown) {
 						console.log(type);
 					}
 				});
 			}
+
 			function getCheckRecords() {
-				var url = "api/CheckRecords/" + getQueryVariable("s") + "?StudentSession=2";
+				var url = "api/CheckRecords/" + cid + "?StudentSession=2";
 				mui.ajax(url, {
 					dataType: 'json',
 					type: 'get',
@@ -175,34 +157,27 @@
 					success: function(data) {
 						if (data) {
 							for (i = 0; i < data.length; i++) {
-								var item = recorditemtemplet;
-								item = item.replace("{id}", data[i].id);
-								item = item.replace("{studentSession}", data[i].studentSession);
-								item = item.replace("{checkInSession}", data[i].checkInSession);
-								item = item.replace("{checkTime}", data[i].checkTime);
-			
-								item = item.replace("{name}", data[i].name);
-								item = item.replace("{session}", data[i].session);
-								item = item.replace("{phone}", data[i].phone);
-								item = item.replace("{description}", data[i].description);
-								item = item.replace("{registTime}", data[i].registTime);
-								listrecord.innerHTML += item;
+								if (data[i].studentSession == usession.session) {
+									divCheckBtn.innerHTML = "签到成功<p/>如果个人信息有误您可以重新填写并且提交.";
+									//divdebug.innerText = JSON.stringify(data);
+									return;
+								}
 							}
-							csvdata = data;
+							//csvdata = data;
 						}
 						return data;
-			
+
 					},
 					error: function(xhr, type, errorThrown) {
-						console.log(type);
+						//console.log(type);
+						
 					}
 				});
 			}
 
 			function getCheck() {
 				//var url = 'http://localhost:49806/api/Checks?TeacherSession=' + usession.session;
-				var url = 'api/Checks/' + getQueryVariable("s") +
-					'?ClassRoom=1&TeacherSession=2&Description=3';
+				var url = 'api/Checks/' + cid + '?ClassRoom=1&TeacherSession=2&Description=3';
 				mui.ajax(url, {
 					dataType: 'json',
 					type: 'get',
@@ -217,7 +192,7 @@
 							item = item.replace("{ClassRoom}", data.classRoom);
 							item = item.replace("{Description}", data.description);
 							item = item.replace("{ID}", data.id);
-							item = item.replace("{TeacherSession}", usession.Name);
+							item = item.replace("{TeacherSession}", data.name);
 							item = item.replace("{Session}", data.session);
 							listCheck.innerHTML += item;
 
@@ -253,6 +228,37 @@
 				tdescription.innerText = user.Description;
 				//var t = getTeacher(user.session, user.Name, user.Phone, user.Description);
 				return user;
+			}
+			
+			function autoSave(Session, Name, Phone, Description){
+				var url = 'api/Student/' + Session +
+					'?Name=' + Name + '&Phone=' + Phone + '&Description=' + Description;
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							usession.Name = data.name;
+							usession.Phone = data.phone;
+							usession.Description = data.description;
+							window.localStorage.setItem("Name", usession.Name);
+							window.localStorage.setItem("Phone", usession.Phone);
+							window.localStorage.setItem("Description", usession.Description);
+							//getUserinfo();
+							//mui.alert('信息保存成功', '极简签到', null);
+							//window.location = window.location;
+						}
+						return data;
+				
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
 			}
 
 			function saveUserInfo() {

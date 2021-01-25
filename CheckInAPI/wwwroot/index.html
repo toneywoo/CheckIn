@@ -139,6 +139,7 @@
 
 			function pageLoaded() {
 				usession = getUserinfo();
+				autoSave(usession.session, txtName.value, txtPhone.value, txtDescription.value);
 				getChecks();
 			}
 
@@ -269,13 +270,43 @@
 				//var t = getTeacher(user.session, user.Name, user.Phone, user.Description);
 				return user;
 			}
+			function autoSave(Session, Name, Phone, Description){
+				var url = 'api/Teachers/' + Session +
+					'?Name=' + Name + '&Phone=' + Phone + '&Description=' + Description;
+				mui.ajax(url, {
+					dataType: 'json',
+					type: 'get',
+					timeout: 10000,
+					headers: {
+						'Content-Type': 'application/json;charset:utf-8'
+					},
+					success: function(data) {
+						if (data) {
+							usession.Name = data.name;
+							usession.Phone = data.phone;
+							usession.Description = data.description;
+							window.localStorage.setItem("Name", usession.Name);
+							window.localStorage.setItem("Phone", usession.Phone);
+							window.localStorage.setItem("Description", usession.Description);
+							//getUserinfo();
+							//mui.alert('信息保存成功', '极简签到', null);
+							//window.location = window.location;
+						}
+						return data;
+				
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type);
+					}
+				});
+			}
 
 			function saveUserInfo() {
 				getTeacher(usession.session, txtName.value, txtPhone.value, txtDescription.value);
 			}
 
 			function getTeacher(Session, Name, Phone, Description) {
-				var url = 'http://localhost:49806/api/Teachers/' + Session +
+				var url = 'api/Teachers/' + Session +
 					'?Name=' + Name + '&Phone=' + Phone + '&Description=' + Description;
 				mui.ajax(url, {
 					dataType: 'json',

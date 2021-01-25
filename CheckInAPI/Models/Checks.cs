@@ -12,6 +12,7 @@ namespace CheckInAPI.Models
         public string Session { get; set; }
         public string Description { get; set; }
         public string TeacherSession { get; set; }
+        public string Name { get; set; }
 
     }
 }
